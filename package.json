@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
+  "engines": {
+    "node": ">=14.20.1"
+  },
   "scripts": {
     "start": "nodemon app.js",
     "test": "mocha"
