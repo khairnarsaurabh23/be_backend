@@ -7,7 +7,7 @@ var cors = require("cors");
 var cookieParser = require("cookie-parser");
 var bodyParser = require('body-parser');
 const multer = require('multer');
-const graphqlHTTP = require('express-graphql').graphqlHTTP;
+// const graphqlHTTP = require('express-graphql').graphqlHTTP;
 const redis = require('redis');
 require('dotenv').config()
 
@@ -33,14 +33,14 @@ var getjobs = require('./routes/getjobs');
 //const redis = require('redis');
 var jobpostings = require('./routes/postjob')
 var useractivity = require('./routes/useractivity');
-const schema = require('./graphqlschema/schema');
+// const schema = require('./graphqlschema/schema');
 
 
 
 //set/configure middlewares here
 const app = express()
-const url = "http://localhost:3000";
-//const url = "hosting url";
+// const url = "http://localhost:3000";
+const url = "https://afinity.onrender.com";
 app.use(cors({ origin: url, credentials: true }));
 
 app.use(function (req, res, next) {
@@ -147,10 +147,10 @@ app.post('/uploadresume', upload.single('selectedFile'), function (req, res, nex
   res.end(JSON.stringify(filename))
 });
 
-app.use("/graphql", graphqlHTTP({
-  schema,
-  graphiql: true
-}));
+// app.use("/graphql", graphqlHTTP({
+//   schema,
+//   graphiql: true
+// }));
 var server = app.listen(3000, () => {
-  console.log("Affinity server has started to listen at http://localhost:3000");
+  console.log(`Affinity server has started to listen at ${url}`);
 });
