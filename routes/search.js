@@ -3,6 +3,8 @@ var router = express.Router();
 // var { mongoose } = require("./../db/mongoose");
 var { User } = require("./../models/user");
 
+
+//info:route used to search the users along the platform
 router.get("/users", function(req, res, next) {
   User.find({},null,{limit:10})
     .then(response => {

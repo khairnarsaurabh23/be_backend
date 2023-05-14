@@ -1,17 +1,21 @@
+//package imports here
 var express = require('express');
 const path = require('path');
-var app = express();
-var fs=require('file-system');
+var fs = require('file-system');
 var session = require("express-session");
 var cors = require("cors");
 var cookieParser = require("cookie-parser");
 var bodyParser = require('body-parser');
+const multer = require('multer');
+const graphqlHTTP = require('express-graphql').graphqlHTTP;
+const redis = require('redis');
 require('dotenv').config()
+
+//local module import here
 var users = require('./routes/users');
 var messages = require('./routes/messages');
 var applications = require('./routes/applications');
 var dashboard = require('./routes/dashboard.js');
-const multer = require('multer');
 var jobpostings = require('./routes/postjob.js');
 var jobs = require('./routes/jobs.js');
 var activitytracker = require('./routes/activitytracker.js')
@@ -30,24 +34,27 @@ var uploadresume = require('./routes/uploadResume');
 var getjobs = require('./routes/getjobs');
 //const redis = require('redis');
 var jobpostings = require('./routes/postjob')
-
-const redis = require('redis');
-var fs=require('file-system');
 var useractivity = require('./routes/useractivity');
+// const schema = require('./graphqlschema/schema');
+
+
+
+//set/configure middlewares here
+const app = express()
+// const url = "http://localhost:3000";
+//const url = "hosting url";
 // const url = "http://localhost:3000";
 const url = "https://affinity-akuw.onrender.com";
 app.use(cors({ origin: url, credentials: true }));
 
-app.use(function(req, res, next) {
-
-    res.setHeader('Access-Control-Allow-Origin', url);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers');
-    res.setHeader('Cache-Control', 'no-cache');
-    next();
-  });
-
+app.use(function (req, res, next) {
+  res.setHeader('Access-Control-Allow-Origin', url);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers');
+  res.setHeader('Cache-Control', 'no-cache');
+  next();
+});
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -58,29 +65,31 @@ app.use(express.static(path.join(__dirname, 'public')));
 //   console.log('connected to redis');
 // })
 
+
+//routes here
 app.use("/users", users);
 app.use("/apply", applications);
 app.use("/applications", applications);
 app.use("/search", search);
 app.use('/user', listusernetwork);
 app.use('/uploadresume', uploadresume);
-app.use('/getjobs', getjobs);
+app.use('/getJobs', getjobs);
 
 
-app.use('/userdata', activitytracker)
+app.use('/userData', activitytracker)
 app.use('/incomplete', activitytrackerincomplete)
-app.use('/jobs',jobs);
-app.use('/recruiter',dashboard);
-app.use('/',jobpostings)
+app.use('/jobs', jobs);
+app.use('/recruiter', dashboard);
+app.use('/postjob', jobpostings)
 app.use('/messages', messages);
 app.use('/recruiter', dashboard);
-app.use('/getjobs',getjobs);
-app.use('/userdata',activitytracker);
-app.use('/incomplete',activitytrackerincomplete);
+app.use('/getjobs', getjobs);
+app.use('/userdata', activitytracker);
+app.use('/incomplete', activitytrackerincomplete);
 //app.use('/useractivity',useractivity)
 app.get("/start", (request, response) => {
   response.status(200).json({
-    msg: "Welcome to Linkedin"
+    msg: "Welcome to Affinity"
   });
 });
 
@@ -108,44 +117,45 @@ const storage = multer.diskStorage({
     console.log("req body " + JSON.stringify(req.body))
     console.log("applicant id passed in destination : " + req.body.applicant_id);
     console.log("selected file  : " + req.body.selectedFile);
-    var currentFolder = 'public/resumeFolder/'+req.body.applicant_id+'/';
-    fs.mkdir(currentFolder, function(err){
-      if(!err) {
+    var currentFolder = 'public/resumeFolder/' + req.body.applicant_id + '/';
+    fs.mkdir(currentFolder, function (err) {
+      if (!err) {
         console.log("no error : " + err);
-        cb(null , currentFolder);
+        cb(null, currentFolder);
       } else {
-         console.log("error : " + err);
-        cb(null , currentFolder);
+        console.log("error : " + err);
+        cb(null, currentFolder);
       }
     });
   },
-  filename: function(req, file, cb){
-  console.log("File to be uploaded : " + file.originalname);
-  filename=Date.now()+'-'+file.originalname;
-  cb(null, filename);
+  filename: function (req, file, cb) {
+    console.log("File to be uploaded : " + file.originalname);
+    filename = Date.now() + '-' + file.originalname;
+    cb(null, filename);
   }
 });
 
 const upload = multer({
-  storage:storage,
+  storage: storage,
   limits: {
-    fileSize :1024*1024*5
+    fileSize: 1024 * 1024 * 5
   }
- });
-app.post('/uploadresume', upload.single('selectedFile'), function(req, res, next){
+});
+app.post('/uploadresume', upload.single('selectedFile'), function (req, res, next) {
   console.log("applicant id in uploadPhoto " + req.body.applicant_id)
   console.log("Filename " + filename)
-    console.log("Inside photo upload Handler");
-    res.writeHead(200,{
-         'Content-Type' : 'text/plain'
-        })
-      res.end(JSON.stringify(filename))
+  console.log("Inside photo upload Handler");
+  res.writeHead(200, {
+    'Content-Type': 'text/plain'
+  })
+  res.end(JSON.stringify(filename))
 });
+
 
 // app.use("/graphql",graphqlHTTP({
 //   schema,
 //   graphiql: true
 // }));
 var server = app.listen(3000,()=>{
-    console.log("Affinity server has started to listen at http://localhost:3000" );
+    console.log(`Affinity server has started to listen at ${url}` );
 });

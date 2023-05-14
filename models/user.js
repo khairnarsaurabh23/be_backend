@@ -1,4 +1,5 @@
 var mongoose =require('mongoose');
+var jwt = require("jsonwebtoken");
 
 var userschema = mongoose.Schema({
     applicant_id : {
@@ -23,8 +24,11 @@ var userschema = mongoose.Schema({
         type : String,
         required : true
     },
-    recruiter_flag : {
-        type : Number
+    //role = teacher,tpo,recruiter,alumni,student
+    role : {
+        type : String,
+        required: true,
+        default: "student"
     },
     student_flag : {
         type : Number
@@ -103,6 +107,18 @@ var userschema = mongoose.Schema({
     applied_job:{type : Array, required : false}
 
 });
+
+//create and return jwt token
+userschema.methods.getJwtToken = function(id){
+    // console.log("model",userschema.applicant_id, id)
+	return jwt.sign(
+		{
+        "id": `${id}`,
+        "expiresIn": "1d"
+        },
+		process.env.JWT_SECRET,
+		);
+};
 
 const User = mongoose.model('User',userschema);
 

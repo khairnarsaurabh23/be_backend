@@ -2,7 +2,8 @@ var express = require('express');
 var router = express.Router();
 // var mysql=require('./mysql.js')                              ;
 const upload = require('../util/multer');
-const cloudinary = require('../util/cloudinary')
+const cloudinary = require('../util/cloudinary');
+const { log,auth, userRole } = require('../middleware/user');
 // var localStorage=require('localStorage');
 // var fs=require('file-system');
 // var filename="";
@@ -44,10 +45,11 @@ const cloudinary = require('../util/cloudinary')
 //     },
 //   });
 
-router.post('/uploadresume', upload.single('resume') , function(req , res , next) {
+//TESTED:OK
+router.post('/uploadresume',log, auth, userRole('student'), upload.single('resume') , function(req , res , next) {
   const file = req.file
   if(file){
-      console.log("Username passed is: ",req.body.applicant_id);
+      console.log("Username passed is: ",req.user.applicant_id);
       console.log("Mime type: \n", file);
       cloudinary.uploader.upload(file.path, {
         folder:file.destination, 

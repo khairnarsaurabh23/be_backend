@@ -3,8 +3,10 @@ var router = express.Router();
 var {UserActivity} = require('../models/UserActivity');
 var {Applications} = require('../models/application.js');
 var {UserActivityIncomplete} = require('../models/UserActivityIncomplete');
+const { log,auth, userRole } = require('../middleware/user');
 
-  router.get('/getuserclicks', function(req, res) {
+//TESTED:OK
+  router.get('/getuserclicks',log, auth, userRole('alumni'), function(req, res) {
     console.log("Received Body ", req.query)
     UserActivity.find({recruiterName:req.query.mail}).then((app)=> {
      //   console.log("\n Number of Clicks for" + app + "\n");
@@ -23,7 +25,8 @@ var {UserActivityIncomplete} = require('../models/UserActivityIncomplete');
     })
   });
 
-  router.get('/savedjobs', function(req, res) {
+  //NEED TO BE TESTED AGAIN
+  router.get('/savedJobs',log, auth, userRole('alumni'), function(req, res) {
     console.log("Received Body ", req.query)
     Applications.find({Saved:"true",RecruiterEmail:req.query.mail}).then((app)=> {
        // console.log("\nJobs are " + app + "\n");
@@ -42,8 +45,8 @@ var {UserActivityIncomplete} = require('../models/UserActivityIncomplete');
     })
   });
 
-
-  router.get('/halffilled', function(req, res) {
+  //TESTED:OK
+  router.get('/halffilled',log, auth, userRole('alumni'), function(req, res) {
     console.log("Received Body for HALF FILLED", req.query)
     UserActivityIncomplete.find({RecruiterEmail:req.query.mail}).then((app)=> {
         console.log("\n Number of HALFFILLED" + app + "\n");
@@ -62,7 +65,8 @@ var {UserActivityIncomplete} = require('../models/UserActivityIncomplete');
     })
   });
 
-  router.get('/fullfilled', function(req, res) {
+  //NEED TO BE TESTED AGAIN
+  router.get('/fullfilled',log, auth, userRole('alumni'), function(req, res) {
     console.log("Received Body ", req.query)
     Applications.find({Applied:"true",RecruiterEmail:req.query.mail}).then((app)=> {
         console.log("\n Fully applied jobs" + app + "\n");

@@ -1,8 +1,10 @@
 var express = require('express');
 var router = express.Router();
+const { log,auth, userRole } = require('../middleware/user');
 var {UserActivityIncomplete} = require('../models/UserActivityIncomplete');
 
-router.post('/halffilled', function(req, res) {
+//TESTED:OK
+router.post('/halffilled',log, auth, userRole('alumni'), function(req, res) {
     console.log("Received Body ", req.body)
      var UserActivityDetails = new UserActivityIncomplete({
          RecruiterEmail : req.body.RecruiterEmail,
