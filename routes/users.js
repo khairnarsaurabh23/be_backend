@@ -16,7 +16,7 @@ var { User } = require('./../models/user');
 var { UserTrace } = require('./../models/usertrace');
 var cookieToken = require('../util/cookieToken')
 var customError = require('../util/customError')
-var { log, auth } = require('../middleware/user')
+var { log, auth, userRole } = require('../middleware/user')
 
 // const redis = require('redis');
 // let client = redis.createClient(6379,'127.0.0.1');
@@ -82,10 +82,16 @@ router.get('/find', function (req, res, next) {
       res.status(400).send(err)
     })
 })
+
+router.get('/test', log, auth, function(req, res, next){
+    console.log("user:", req.user)
+    next()
+})
 //================================================================================
 
 //TODO-update the route
 //ROUTE:user
+//TESTED:OK
 router.post("/uploadprofilepic", upload.single("photos"), function (req, res, next) {
   console.log("Inside upload profile pic API");
   console.log(req.file);
@@ -95,6 +101,7 @@ router.post("/uploadprofilepic", upload.single("photos"), function (req, res, ne
 //==============================================================================================
 
 //ROUTE:*
+//TESTED:OK
 router.post("/login", log, function (req, res, next) {
   // console.log("inside login");
   let email = req.body.email;
@@ -152,8 +159,9 @@ router.post("/login", log, function (req, res, next) {
 //==============================================================================================
 
 //ROUTE:*
+//TESTED:OK
 router.post("/signup", log, function (req, res, next) {
-  console.log(User.db);
+  // console.log(User.db);
   // var recruiter_flag = req.body.recruiter_value == "Recruiter" ? 1 : 0;
   var passwordToSave = bcrypt.hashSync(req.body.password, salt);
   const userDetails = new User({
@@ -228,12 +236,26 @@ router.post("/signup", log, function (req, res, next) {
 });
 
 //==============================================================================================
+//ROUTE:*
+//TESTED:OK
+router.get("/logout", log, function(req, res, next){
+  res.clearCookie('token')
+  req.user = undefined
+  res.status(200).json({
+    "status": "success",
+    "message": "successfully logout"
+  })
+})
+
+//==============================================================================================
 
 //TODO: protect the route for the teacher actor
+//TESTED:OK
 //ROUTE:teacher/user
-router.post('/updateProfile', auth, log, function (req, res, next) {
+router.post('/updateProfile',log,auth,userRole('student','alumni'), function (req, res, next) {
+  // console.log(res)
   console.log("inside update profile", req.body);
-  console.log("Student flag is : ", req.body.student_flag);
+  // console.log("Student flag is : ", req.body.student_flag);
   var workexperience = "";
   var educationDetails = "";
   if (req.body.company != undefined && req.body.experience != '') {
@@ -249,7 +271,7 @@ router.post('/updateProfile', auth, log, function (req, res, next) {
       last_name: req.body.last_name,
       email: req.body.email,
       job_title: req.body.job_title,
-      address: req.body.city + "," + req.body.state,
+      address: req.body.city + "," + req.body.state +","+ req.body.country,
       state: req.body.state,
       city: req.body.city,
       country: req.body.country,
@@ -261,21 +283,19 @@ router.post('/updateProfile', auth, log, function (req, res, next) {
       education: req.body.education,
       skills: req.body.skills,
       profile_summary: req.body.profile_summary,
-      profile_img: req.body.profileImage,
-      status: req.body.status,
       headline: req.body.headline,
-      resume_path: req.body.profileResume
     }
   }
   console.log("Work details: ", workexperience);
-  User.updateOne({ applicant_id: req.body.applicant_id }, dataChange)
+  User.updateOne({ applicant_id: req.user.applicant_id }, dataChange)
     .exec()
     .then(doc => {
       console.log("Data Obtained after updation is : ", doc);
-      User.find({ "applicant_id": req.body.applicant_id })
+      User.find({ "applicant_id": req.user.applicant_id })
         .exec()
         .then(result => {
           console.log("Response sent after updation is : ", result);
+          result[0].password = undefined
           res.status(200).json({
             message: "User profile updated",
             userProfileDetails: result[0]
@@ -293,9 +313,10 @@ router.post('/updateProfile', auth, log, function (req, res, next) {
 //==============================================================================================
 
 //ROUTE:user
-router.post('/getProfile', log, function (req, res, next) {
-  console.log("inside get profile post", req.body.applicant_id);
-  User.find({ "applicant_id": req.body.applicant_id })
+//TESTED:OK
+router.get('/getProfile', log, auth, userRole('student','alumni'), function (req, res, next) {
+  // console.log("inside get profile post", req.body.applicant_id);
+  User.find({ "applicant_id": req.user.applicant_id })
     .exec()
     .then(doc => {
       console.log("response got : ", doc[0]);
@@ -306,6 +327,7 @@ router.post('/getProfile', log, function (req, res, next) {
         });
       }
       else {
+        doc[0].password = undefined
         res.status(200).json({
           message: "User profile fetched successfully",
           userDetails: doc[0]
@@ -323,8 +345,11 @@ router.post('/getProfile', log, function (req, res, next) {
 //==============================================================================================
 
 //ROUTE:user
-router.post('/userViewTrace', log, function (req, res, next) {
-  console.log("inside profile trace post", req.body.applicant_id);
+//TESTED:OK
+//info: to create a profile viewed trace
+//needs applicant_id of viewed profile
+router.post('/userViewTrace', log, auth, userRole('student','alumni'), function (req, res, next) {
+  // console.log("inside profile trace post", req.body.applicant_id);
   // var mydate = new Date().toISOString().split('T')[0];
   var mydate = new Date().toISOString();
   console.log("Timestamp: ", mydate);
@@ -333,12 +358,13 @@ router.post('/userViewTrace', log, function (req, res, next) {
   const userDetails = new UserTrace({
     applicant_id: req.body.applicant_id,
     timestamp: new Date(d).toISOString(),
-    viewer_applicant_id: req.body.viewer_applicant_id
+    viewer_applicant_id: req.user.applicant_id
   });
   userDetails.save().then(result => {
     console.log("result: ", result);
     res.status(200).json({
-      message: "User trace saved successfully"
+      message: "User trace saved successfully",
+      trace: userDetails
     });
   })
     .catch(err => {
@@ -351,15 +377,17 @@ router.post('/userViewTrace', log, function (req, res, next) {
 //==============================================================================================
 
 //ROUTE:user
-router.post('/getTraceData', log, function (req, res, next) {
-  console.log("inside get applicant trace data", req.body);
+//TESTED:OK
+//get the trace data from the past one month
+router.get('/getTraceData', log, auth, userRole('student','alumni'), function (req, res, next) {
+  // console.log("inside get applicant trace data", req.body);
   var mydate = new Date().toISOString();
   console.log("Value of mydate: ", mydate);
   var d = new Date();
   d.setMonth(d.getMonth() - 1);
   console.log("Value of d: ", d);
   UserTrace.find({
-    "applicant_id": req.body.applicant_id,
+    "applicant_id": req.user.applicant_id,
     "timestamp": {
       $lte: new Date(mydate).toISOString()
     },
@@ -380,7 +408,8 @@ router.post('/getTraceData', log, function (req, res, next) {
 //==============================================================================================
 //TODO: review this route functionality
 //ROUTE:user
-router.post("/users", log, function (req, res, next) {
+//TESTED:OK
+router.post("/users", log, auth, userRole('student','alumni'), function (req, res, next) {
   console.time("Query_Time");
   const { first_name } = req.body;
   var result = [];

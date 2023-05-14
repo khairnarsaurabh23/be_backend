@@ -3,6 +3,8 @@ var router = express.Router();
 var {Applications} = require('./../models/application');
 var {JobPostings} = require('../models/jobpostings');
 var {User} = require('./../models/user');
+const { log, auth, userRole } = require('../middleware/user');
+// const {userRole, auth, log} = require('../middleware/user')
 
 
 // var kafka = require('./../kafka/client.js');
@@ -130,11 +132,12 @@ var {User} = require('./../models/user');
 //   });
 
 
-
-router.post('/job', function(req, res, next) {
+//data: Job_id, other details from application model
+//TESTED:OK
+router.post('/job', log, auth, userRole('student'), function(req, res, next) {
     console.log("inside custom apply");
     console.log("req sent from custom apply", req.body);
-    Applications.findOne({Applicant_id:req.body.Applicant_id, Job_id:req.body.Job_id, Saved:true, Applied:false},function(err, doc) {
+    Applications.findOne({Applicant_id:req.user.applicant_id, Job_id:req.body.Job_id, Saved:true, Applied:false},function(err, doc) {
         if(err){
             console.log("error occured while searching for job application:\n", err)
             res.status(400).json({
@@ -172,7 +175,7 @@ router.post('/job', function(req, res, next) {
                             }
                             else{
                                 console.log("in success");
-                                User.findByIdAndUpdate({"_id":req.body.Applicant_id},{ $addToSet:{applied_job:req.body.Job_id} },(err,success)=>{
+                                User.findByIdAndUpdate({"_id":req.user.applicant_id},{ $addToSet:{applied_job:req.body.Job_id} },(err,success)=>{
                                     if(err){
                                         console.log(err);
                                         response.sendStatus(201);
@@ -199,7 +202,7 @@ router.post('/job', function(req, res, next) {
                     })
             }
             else{
-                Applications.findOne({Applicant_id:req.body.Applicant_id, Job_id:req.body.Job_id, Applied:true, Saved:false},function(err, doc) {
+                Applications.findOne({Applicant_id:req.user.applicant_id, Job_id:req.body.Job_id, Applied:true, Saved:false},function(err, doc) {
                     if(err){res.status(400).send("error occured")}
                     else {
                         if(doc){
@@ -214,7 +217,7 @@ router.post('/job', function(req, res, next) {
                         }
                         else{console.log("-----it's new application....")
                         const customApplyDetail = new Applications({
-                            Applicant_id : req.body.Applicant_id,
+                            Applicant_id : req.user.applicant_id,
                             RecruiterEmail : req.body.RecruiterEmail,
                             HowDidYouHear: req.body.hear,
                             Email : req.body.email,
@@ -247,7 +250,7 @@ router.post('/job', function(req, res, next) {
                                 }
                                 else{
                                     console.log("in success");
-                                    User.findByIdAndUpdate({"_id":req.body.Applicant_id},{ $addToSet:{applied_job:req.body.Job_id} },(err,success)=>{
+                                    User.findByIdAndUpdate({"_id":req.user.applicant_id},{ $addToSet:{applied_job:req.body.Job_id} },(err,success)=>{
                                         if(err){
                                             console.log(err);
                                             response.sendStatus(201);
@@ -279,6 +282,8 @@ router.post('/job', function(req, res, next) {
 
 
   });
+
+
 // router.post('/job', function(req, res, next) {
 //     console.log("inside custom apply");
 //     console.log("req sent from custom apply", req.body);
@@ -305,7 +310,9 @@ router.post('/job', function(req, res, next) {
 
 
   //applied jobs in dashboard
-  router.get('/applied/:ID', function(req, res, next) {
+  //needs the applicant_id from req.query
+  //TESTED:OK
+  router.get('/applied/:ID',log, auth, userRole('student'), function(req, res, next) {
     console.log("inside appled jobs");
     console.log("req sent from applied job dashboard", req.body);
     console.log("applicant id : " + req.params.ID)
@@ -352,8 +359,9 @@ router.post('/job', function(req, res, next) {
 // });
 
 //Saved jobs in dashboard
-
-router.get('/saved/:ID', function(req, res, next) {
+//data: applicant_id from req.param
+//TESTED:OK
+router.get('/saved/:ID',log, auth, userRole('student'), function(req, res, next) {
     console.log("inside saved jobs");
     console.log("req sent from saved job dashboard", req.body);
     console.log("applicant id : " + req.params.ID)
@@ -399,16 +407,17 @@ router.get('/saved/:ID', function(req, res, next) {
 // });
 
 //==============================================================================================
-router.post('/getrecruiterdashboard', function (req,res,next) {
-  console.log("inside get recuriter applicants data",req.body);
+//NOTE: recruiter dashbord here
+//TESTED:OK
+router.post('/getrecruiterdashboard',log, auth, userRole('alumni'), function (req,res,next) {
+  console.log("inside get recuriter applicants data",req.body.RecruiterEmail);
   var mydate = new Date().toISOString();
   console.log("Value of mydate: ", mydate);
   var d = new Date();
   d.setMonth(d.getMonth() - 1);
   console.log("Value of d: ", d);
   Applications.find({
-              "RecruiterEmail" : req.body.RecruiterEmail
-
+              "Email" : req.body.RecruiterEmail
             })
   .exec()
   .then(result => {
@@ -425,11 +434,13 @@ router.post('/getrecruiterdashboard', function (req,res,next) {
   });
 });
 
-
-router.post('/easy', function(req, res, next) {
+//===============================================================================================
+//NOTE: easy apply, need to think again
+//TESTED:OK
+router.post('/easy',log, auth, userRole('student'), function(req, res, next) {
     console.log("---Inside easy apply---");
     console.log("req sent from easy apply", req.body);
-    Applications.findOne({Applicant_id:req.body.Applicant_id, Job_id:req.body.Job_id, Saved:true, Applied:false},function(err, doc) {
+    Applications.findOne({Applicant_id:req.user.applicant_id, Job_id:req.body.Job_id, Saved:true, Applied:false},function(err, doc) {
         if(err){
             console.log(err)
             res.sendStatus(201);

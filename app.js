@@ -69,14 +69,14 @@ app.use("/applications", applications);
 app.use("/search", search);
 app.use('/user', listusernetwork);
 app.use('/uploadresume', uploadresume);
-app.use('/getjobs', getjobs);
+app.use('/getJobs', getjobs);
 
 
-app.use('/userdata', activitytracker)
+app.use('/userData', activitytracker)
 app.use('/incomplete', activitytrackerincomplete)
 app.use('/jobs', jobs);
 app.use('/recruiter', dashboard);
-app.use('/', jobpostings)
+app.use('/postjob', jobpostings)
 app.use('/messages', messages);
 app.use('/recruiter', dashboard);
 app.use('/getjobs', getjobs);

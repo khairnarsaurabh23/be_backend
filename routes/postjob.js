@@ -2,8 +2,11 @@ var express = require('express');
 var router = express.Router();
 
 var {JobPostings} = require('../models/jobpostings');
+const { log, auth, userRole } = require('../middleware/user.js');
 
-router.post('/postjob', function(req, res) {
+
+//TESTED:OK
+router.post('/postjob',log, auth, userRole('alumni'), function(req, res) {
     console.log("Received Body ", req.body)
      var JobDetails = new JobPostings({
         CompanyName : req.body.Company,

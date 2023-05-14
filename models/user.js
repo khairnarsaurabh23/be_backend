@@ -28,7 +28,7 @@ var userschema = mongoose.Schema({
     role : {
         type : String,
         required: true,
-        default: "user"
+        default: "student"
     },
     student_flag : {
         type : Number
@@ -109,11 +109,14 @@ var userschema = mongoose.Schema({
 });
 
 //create and return jwt token
-userschema.methods.getJwtToken = (cb)=>{
+userschema.methods.getJwtToken = function(id){
+    // console.log("model",userschema.applicant_id, id)
 	return jwt.sign(
-		{id: this.applicant_id},
+		{
+        "id": `${id}`,
+        "expiresIn": "1d"
+        },
 		process.env.JWT_SECRET,
-		{expiresIn: "1d"}
 		);
 };
 

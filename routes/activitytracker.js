@@ -1,8 +1,10 @@
 var express = require('express');
+const { log,auth, userRole } = require('../middleware/user');
 var router = express.Router();
 var {UserActivity} = require('../models/UserActivity');
 
-router.post('/job', function(req, res) {
+//TESTED:OK
+router.post('/job',log, auth, userRole('alumni'), function(req, res) {
     console.log("Received Body ", req.body)
      var UserActivityDetails = new UserActivity({
          Company : req.body.Company,

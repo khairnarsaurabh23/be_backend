@@ -282,9 +282,11 @@ var jobpostings_db = require('../db/jobpostings.js');
 var kafka = require('./../kafka/client.js');
 const multer = require('multer');
 var fs = require('fs');
+const { log, auth, userRole } = require('../middleware/user.js');
 // job listing without kafka
 
 
+//TODO:need to add cloudinary storage
 const storage=multer.diskStorage({
     destination :function(req,file, cb) {
         console.log("in destination")
@@ -315,7 +317,9 @@ const storage=multer.diskStorage({
 
 var upload = multer({ storage: storage }).any();
 
-router.get("/search",async (request,response,next)=>{
+//TESTED:OK
+//get all the listed jobs here
+router.get("/search",log, auth, userRole('student'),async (request,response,next)=>{
     console.log("Inside new Jobs search");
 
     try{
@@ -396,12 +400,14 @@ router.get("/search",function(request,response,next){
     //     response.status(201).json({ msg });
     // });
 
-router.post("/save/:jobid", async (request, response, next) => {
+//TESTED:OK
+router.post("/save/:jobid",log, auth, userRole('student'), async (request, response, next) => {
     try {
         console.log("inside jobs save");
         const jobid = request.params.jobid;
-        const { companyName, jobTitle, jobLocation, applicant_id, RecruiterEmail,Email, companyLogo, easyApply, postingDate } = request.body;
-        console.log(request.body);
+        const { companyName, jobTitle, jobLocation, RecruiterEmail,Email, companyLogo, easyApply, postingDate } = request.body;
+        // console.log(request.body);
+        const applicant_id = req.user.applicant_id
         const application = new Applications({
             Job_id: jobid,
             CompanyName: companyName,
@@ -412,7 +418,6 @@ router.post("/save/:jobid", async (request, response, next) => {
             Email : Email,
             Applied: false,
             Saved: true,
-            CompanyLogo: companyLogo,
             easyApply: easyApply,
             postingDate : postingDate,
         });
@@ -420,6 +425,16 @@ router.post("/save/:jobid", async (request, response, next) => {
         const savedApplication = await application.save();
         console.log(savedApplication);
         let addToAppliedJobArray = await User.findOneAndUpdate({"_id":applicant_id},{ $addToSet:{saved_job:jobid}});
+        User.findById({id:req.user.applicantId})
+        .then((result)=>{
+            result.applied_job.shift(addToAppliedJobArray)
+        })
+        .catch((e)=>{
+            console.log("error while saving the job",e)
+            response.Status(400).json({
+                "message": "Something went wrong while saving the job. Try Again",
+            })
+        })
         response.sendStatus(200);
     } catch (error) {
         console.log(error);

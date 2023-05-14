@@ -1,5 +1,6 @@
 const cookieToken = (user, res) => {
-	const token = user.getJwtToken();
+	// console.log("cookie", user)
+	const token = user.getJwtToken(user.applicant_id);
 	const options = {
 		expiresIn: new Date(
 			Date.now() + process.env.COOKIE_EXPIRY
