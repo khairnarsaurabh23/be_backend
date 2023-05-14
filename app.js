@@ -26,6 +26,8 @@ var getjobs = require('./routes/getjobs.js');
 var activitytracker = require('./routes/activitytracker.js')
 var activitytrackerincomplete = require('./routes/activitytrackerincomplete.js')
 var listusernetwork = require('./routes/listusernetworks');
+// const graphqlHTTP = require('express-graphql').graphqlHTTP;
+// const schema = require('./graphqlschema/schema');
 // var {User} = require('./models/user');
 var search = require("./routes/search");
 var uploadresume = require('./routes/uploadResume');
@@ -33,14 +35,16 @@ var getjobs = require('./routes/getjobs');
 //const redis = require('redis');
 var jobpostings = require('./routes/postjob')
 var useractivity = require('./routes/useractivity');
-const schema = require('./graphqlschema/schema');
+// const schema = require('./graphqlschema/schema');
 
 
 
 //set/configure middlewares here
 const app = express()
-const url = "http://localhost:3000";
+// const url = "http://localhost:3000";
 //const url = "hosting url";
+// const url = "http://localhost:3000";
+const url = "https://affinity-akuw.onrender.com";
 app.use(cors({ origin: url, credentials: true }));
 
 app.use(function (req, res, next) {
@@ -147,10 +151,11 @@ app.post('/uploadresume', upload.single('selectedFile'), function (req, res, nex
   res.end(JSON.stringify(filename))
 });
 
-app.use("/graphql", graphqlHTTP({
-  schema,
-  graphiql: true
-}));
-var server = app.listen(3000, () => {
-  console.log("Affinity server has started to listen at http://localhost:3000");
+
+// app.use("/graphql",graphqlHTTP({
+//   schema,
+//   graphiql: true
+// }));
+var server = app.listen(3000,()=>{
+    console.log(`Affinity server has started to listen at ${url}` );
 });
